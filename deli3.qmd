@@ -1,0 +1,59 @@
+---
+title: "Deliverable 3"
+author: "Madison Hess"
+description: ""
+date: "November 21, 2024"
+format: 
+  html: 
+    embed-resources: true
+    self-contained-math: true
+---
+```{r load-packages}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(readxl)
+library(readr)
+library(dplyr)
+library(haven) #for loading other datafiles (SAS, STATA, SPSS, etc.)
+library(stringr) 
+library(lubridate) 
+```
+
+```{r dataset 1}
+form_wiki <- read_csv("https://raw.githubusercontent.com/Data-Pre-Processing/Deliverable2/refs/heads/main/DataCleanAndFormatted/clean_wiki_counties.csv") #reading in dataset to be reshaped
+
+#not sure why row numbers showed up in the first column but am getting rid of them here
+form_wiki <- form_wiki|>
+  select(2:9)
+
+#creating consistent data type to run pivot code
+form_wiki$population <- as.character(form_wiki$population)
+form_wiki$year_established <- as.character(form_wiki$year_established)
+form_wiki$area_sq_mi <- as.character(form_wiki$area_sq_mi)
+
+#pivoting longer
+wiki_longer <- pivot_longer(form_wiki, cols = c('FIPS_code', 'county_seat', 'year_established', 'origin', 'etymology', 'population', 'area_sq_mi'),
+                     names_to = "attributes",
+                     values_to = "values")
+
+#writing file for pivoted data
+setwd("/Users/maddiehess/Desktop/Github/Deliverable3")
+write.csv(wiki_longer, file.path("ReshapedandJoinedData", "long_wiki.csv"))
+```
+
+```{r dataset 2}
+clean_counties <- read_csv("https://raw.githubusercontent.com/Data-Pre-Processing/Deliverable2/refs/heads/main/DataCleanAndFormatted/census_pop_clean.csv") #reading in dataset
+
+#merging with data from form_wiki
+cens_wiki <- left_join(clean_counties, form_wiki, by = c('county' = 'county'))
+
+#getting rid of wiki population estimate (only want to the 2019 census estimate included)
+cens_wiki <- cens_wiki|>
+  select(1:8, 10)
+
+#writing file for joined data
+write.csv(cens_wiki, file.path("ReshapedandJoinedData", "census_wiki_join.csv"))
+```
+```
+
